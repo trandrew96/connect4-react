@@ -36,7 +36,7 @@ function Column({values, columnId, redIsNext, onPlay}) {
   )
 
   return(
-    <div className={"flex flex-col-reverse rounded-3xl " + (isHovered && "bg-black")} 
+    <div className={"flex flex-col-reverse rounded-3xl " + (isHovered && "bg-blue-500")} 
     onClick = {() => onPlay(columnId)}
     onMouseOver={() => {
       setIsHovered(true);
