@@ -1,19 +1,63 @@
 import './App.css';
 import { useState, useRef, useEffect } from "react";
 
-function Column({values, columnId}) {
-  return values.map((value, i) => 
-      <div className={'rounded-full w-12 h-12 border-2 border-black ' + (value === 1 ? 'bg-red-600' :  (value === 2 ? 'bg-yellow-600' : 'bg-white')) } key={`piece-${columnId}-${i}`}></div>
+function Column({values, columnId, redIsNext, onPlay}) {
+  const [isHovered, setIsHovered] = useState(false);
+
+  let discs = values.map((value, i) => 
+    {
+      let bgColor;
+      
+      switch(value) {
+        case 1:
+          bgColor = 'bg-red-600';
+          break;
+        case 2:
+          bgColor = 'bg-yellow-500';
+          break;
+        default:
+          if (isHovered && !value && (values[i-1] || i===0)) {
+            if (redIsNext) {
+              bgColor = 'bg-red-600';
+            } else {
+              bgColor = 'bg-yellow-500';
+            }
+          } else if (!value) {
+            bgColor = 'bg-white';
+          }
+      }
+      
+      return <>
+        <div className={'rounded-full w-14 h-14 m-3 ' + bgColor } 
+        key={`piece-${columnId}-${i}`}></div>
+      </>
+    }
+      
   )
+
+  return(
+    <div className={"flex flex-col-reverse rounded-3xl " + (isHovered && "bg-black")} 
+    onClick = {() => onPlay(columnId)}
+    onMouseOver={() => {
+      setIsHovered(true);
+    }}
+    onMouseLeave={() => {
+      setIsHovered(false);
+    }}
+    >
+      {discs}
+    </div>
+)
 }
 
-function Grid({columns}) {
+function Grid({columns, redIsNext, onPlay}) {
   return (
-    <div className="flex gap-2 px-4 py-2">
+    <div className="flex hover:cursor-pointer">
       {columns.map((column, i) => {
         return(
-            <div className="flex flex-col-reverse gap-2" key={`column-container-${i}`}>
-              <Column values={column} columnId={i}></Column>
+            <div className={"flex flex-col-reverse rounded-3xl "} 
+            key={`column-container-${i}`}>
+              <Column values={column} columnId={i} redIsNext={redIsNext} onPlay={onPlay}></Column>
             </div>
         )
       })}
@@ -26,7 +70,6 @@ export default function Game() {
   const [redIsNext, setRedIsNext] = useState(true);
   const [status, setStatus] = useState("Red player's turn")
   const [gameOver, setGameOver] = useState(false);
-
   const [seconds, setSeconds] = useState(10);
 
   const timerId = useRef();
@@ -99,28 +142,48 @@ export default function Game() {
     startCountdown();
   }
 
-  let buttonRow = columns.map((col, i) => 
-    <button 
-      className='bg-black text-white p-2 w-12'
-      onClick={() => handleInsert(i)}
-      key={`insertBtn-${i}`}
-      >↓
-    </button>
-  )
+  // let buttonRow = columns.map((col, i) => 
+  //   <button 
+  //     className='bg-black text-white p-2 w-12'
+  //     onClick={() => handleInsert(i)}
+  //     key={`insertBtn-${i}`}
+  //     >↓
+  //   </button>
+  // )
 
   return (
-    <div className="App max-w-md mx-auto">
-      <h2>{status} {!gameOver && '(' + seconds + ')'}</h2>
-      <div className='flex gap-2 px-6 py-2'>
-        {buttonRow}
+    <div className="App bg-zinc-300 min-h-screen pt-3">
+      <div className='w-fit mx-auto '>
+        <section className='my-3'>
+          <button className='bg-zinc-400 rounded-3xl px-3 py-2 block ml-auto' onClick={resetGame}>RESTART</button>
+        </section>
+
+        <section className='flex justify-between my-3'>
+          <div className='w-fit px-10 py-6 rounded-xl bg-red-600'>
+            <span className='text-2xl'>PLAYER 1</span>
+          </div>
+          <div className='w-fit px-10 py-6 rounded-xl bg-yellow-500'>
+          <span className='text-2xl'>PLAYER 2</span>
+          </div>
+        </section>
+
+        {/* Board */}
+        <section className="bg-blue-800 mx-auto rounded-3xl">
+          <Grid columns={columns} onPlay={handleInsert} redIsNext={redIsNext}></Grid>
+        </section>
+
+        {/* Timer Section */}
+        <section className={'w-max text-center mx-auto px-3 py-2 mt-5 ' + (redIsNext ? 'bg-red-300 ' : 'bg-yellow-500 ')}>
+          {!gameOver &&
+            <h2>PLAYER {redIsNext && " 1'S TURN"} {!redIsNext && " 2'S TURN"}</h2>
+          }
+          {
+            gameOver && <h2>GAME OVER</h2>
+          }
+          
+          <span>{!gameOver && '(' + seconds + ')'}</span>
+        </section>
       </div>
-      {/* Board */}
-      <section className="bg-sky-500 px-2 py-2 rounded-lg border-4 border-black">
-        <Grid columns={columns} onPlay={handleInsert}></Grid>
-      </section>
-      <section>
-        <button className='bg-red-600 px-3 py-2 mx-auto block mt-5' onClick={resetGame}>Start Over</button>
-      </section>
     </div>
   );
 }
