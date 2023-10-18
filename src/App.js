@@ -10,10 +10,10 @@ function Column({values, columnId, redIsNext, onPlay}) {
       
       switch(value) {
         case 1:
-          bgColor = 'bg-red-600';
+          bgColor = 'bg-red-600 animate-new-piece';
           break;
         case 2:
-          bgColor = 'bg-yellow-500';
+          bgColor = 'bg-yellow-500 animate-new-piece';
           break;
         default:
           if (isHovered && !value && (values[i-1] || i===0)) {
