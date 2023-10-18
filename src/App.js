@@ -1,7 +1,7 @@
 import './App.css';
 import { useState, useRef, useEffect } from "react";
 
-function Column({values, columnId, redIsNext, onPlay}) {
+function Column({values, columnId, redIsNext, onPlay, gameOver}) {
   const [isHovered, setIsHovered] = useState(false);
 
   let discs = values.map((value, i) => 
@@ -16,7 +16,7 @@ function Column({values, columnId, redIsNext, onPlay}) {
           bgColor = 'bg-yellow-500 animate-new-piece';
           break;
         default:
-          if (isHovered && !value && (values[i-1] || i===0)) {
+          if (isHovered && !value && (values[i-1] || i===0) && !gameOver) {
             if (redIsNext) {
               bgColor = 'bg-red-600';
             } else {
@@ -32,11 +32,10 @@ function Column({values, columnId, redIsNext, onPlay}) {
         key={`piece-${columnId}-${i}`}></div>
       </>
     }
-      
   )
 
   return(
-    <div className={"flex flex-col-reverse rounded-3xl " + (isHovered && "bg-blue-500")} 
+    <div className={"flex flex-col-reverse rounded-3xl " + (isHovered && !gameOver && "bg-blue-500")} 
     onClick = {() => onPlay(columnId)}
     onMouseOver={() => {
       setIsHovered(true);
@@ -50,14 +49,14 @@ function Column({values, columnId, redIsNext, onPlay}) {
 )
 }
 
-function Grid({columns, redIsNext, onPlay}) {
+function Grid({columns, redIsNext, onPlay, gameOver}) {
   return (
-    <div className="flex hover:cursor-pointer">
+    <div className={"flex " + (!gameOver && 'hover:cursor-pointer')}>
       {columns.map((column, i) => {
         return(
             <div className={"flex flex-col-reverse rounded-3xl "} 
             key={`column-container-${i}`}>
-              <Column values={column} columnId={i} redIsNext={redIsNext} onPlay={onPlay}></Column>
+              <Column values={column} columnId={i} redIsNext={redIsNext} onPlay={onPlay} gameOver={gameOver}></Column>
             </div>
         )
       })}
@@ -68,7 +67,7 @@ function Grid({columns, redIsNext, onPlay}) {
 export default function Game() {
   const [columns, setColumns] = useState(Array(7).fill().map(()=>Array(6).fill()));
   const [redIsNext, setRedIsNext] = useState(true);
-  const [status, setStatus] = useState("Red player's turn")
+  const [status, setStatus] = useState(0) // 0 -> in progress, 1 -> player 1 wins, 2 -> player 2 wins, 3 -> game over cuz time expired
   const [gameOver, setGameOver] = useState(false);
   const [seconds, setSeconds] = useState(10);
 
@@ -96,9 +95,9 @@ export default function Game() {
     clearInterval(countdownId.current);
     clearInterval(timerId.current);
     if (checkWinner(columns, (redIsNext ? 1 : 2))) {
-      setStatus(`Player ${redIsNext ? "red" : "yellow"} is a winner!`);
+      setStatus(redIsNext ? 1 : 2);
     } else {
-      setStatus('Game is over because time expired')
+      setStatus(3)
     }
     setGameOver(true);
   }
@@ -120,11 +119,6 @@ export default function Game() {
         }
 
         setRedIsNext(!redIsNext);
-        if (!redIsNext) {
-          setStatus("Red player's turn")
-        } else {
-          setStatus("Yellow player's turn")
-        }
 
         startCountdown();
         setColumns(newColumns);
@@ -138,18 +132,9 @@ export default function Game() {
     setColumns(Array(7).fill().map(()=>Array(6).fill()));
     setGameOver(false);
     setRedIsNext(true);
-    setStatus("Red player's turn");
+    setStatus(0);
     startCountdown();
   }
-
-  // let buttonRow = columns.map((col, i) => 
-  //   <button 
-  //     className='bg-black text-white p-2 w-12'
-  //     onClick={() => handleInsert(i)}
-  //     key={`insertBtn-${i}`}
-  //     >↓
-  //   </button>
-  // )
 
   return (
     <div className="App bg-zinc-300 min-h-screen pt-3">
@@ -169,7 +154,7 @@ export default function Game() {
 
         {/* Board */}
         <section className="bg-blue-800 mx-auto rounded-3xl">
-          <Grid columns={columns} onPlay={handleInsert} redIsNext={redIsNext}></Grid>
+          <Grid columns={columns} onPlay={handleInsert} redIsNext={redIsNext} gameOver={gameOver}></Grid>
         </section>
 
         {/* Timer Section */}
@@ -178,10 +163,20 @@ export default function Game() {
             <h2>PLAYER {redIsNext && " 1'S TURN"} {!redIsNext && " 2'S TURN"}</h2>
           }
           {
-            gameOver && <h2>GAME OVER</h2>
+            (status===1) && <h2>PLAYER 1 WINS</h2>
           }
-          
-          <span>{!gameOver && '(' + seconds + ')'}</span>
+          {
+            (status===2) && <h2>PLAYER 2 WINS</h2>
+          }
+          {
+            (status===3) && <h2>GAME OVER</h2>
+          }
+          {!gameOver &&
+            <>
+              <span className="text-3xl">{seconds}</span>
+              <span>s</span>
+            </>
+          }
         </section>
       </div>
     </div>
